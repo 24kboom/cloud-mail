@@ -17,6 +17,10 @@ export function emailRead(emailIds) {
     return http.put('/email/read', {emailIds})
 }
 
+export function emailTranslate(emailId, targetLang) {
+    return http.post('/email/translate', {emailId, targetLang}, {timeout: 180 * 1000, noMsg: true})
+}
+
 export function emailSend(form,progress) {
     return http.post('/email/send', form,{
         onUploadProgress: (e) => {

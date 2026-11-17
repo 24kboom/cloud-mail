@@ -1,5 +1,10 @@
 const en = {
     inbox: 'Inbox',
+    translate: 'Translate',
+    showOriginal: 'Show original',
+    showTranslation: 'Show translation',
+    translating: 'Translating…',
+    translateFailed: 'Translation failed, please try again',
     compose: 'Compose',
     drafts: 'Drafts',
     sent: 'Sent',

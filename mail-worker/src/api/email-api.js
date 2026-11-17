@@ -34,3 +34,8 @@ app.put('/email/read', async (c) => {
 	return c.json(result.ok());
 })
 
+app.post('/email/translate', async (c) => {
+	const data = await emailService.translate(c, await c.req.json(), userContext.getUserId(c));
+	return c.json(result.ok(data));
+});
+

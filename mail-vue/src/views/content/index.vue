@@ -42,8 +42,19 @@
             <el-alert v-if="email.status === 4" :closable="false" :title="$t('complained')" class="email-msg" type="warning" show-icon />
             <el-alert v-if="email.status === 5" :closable="false" :title="$t('delayed')" class="email-msg" type="warning" show-icon />
           </div>
+          <div class="translate-bar">
+            <el-select v-model="targetLang" size="small" class="translate-select">
+              <el-option v-for="lang in translateLangs" :key="lang.value" :label="lang.label" :value="lang.value" />
+            </el-select>
+            <el-button size="small" type="primary" :loading="translating" @click="handleTranslate">{{ $t('translate') }}</el-button>
+            <el-button size="small" v-if="translated" @click="showTranslated = !showTranslated">{{ showTranslated ? $t('showOriginal') : $t('showTranslation') }}</el-button>
+          </div>
           <el-scrollbar class="htm-scrollbar" :class="!email.attList?.length ? 'bottom-distance' : ''">
-            <ShadowHtml class="shadow-html" :html="formatImage(email.content)" v-if="email.content" />
+            <div v-if="showTranslated && translated" class="translated-box">
+              <div class="translated-subject" v-if="translated.subject">{{ translated.subject }}</div>
+              <pre class="email-text">{{ translated.text }}</pre>
+            </div>
+            <ShadowHtml class="shadow-html" :html="formatImage(email.content)" v-else-if="email.content" />
             <pre v-else class="email-text" >{{email.text}}</pre>
           </el-scrollbar>
           <div class="att" v-if="email.attList?.length > 0">
@@ -86,7 +97,7 @@ import ShadowHtml from '@/components/shadow-html/index.vue'
 import {computed, reactive, ref, watch, onMounted, onUnmounted, nextTick} from "vue";
 import {useRouter} from 'vue-router'
 import {ElMessage, ElMessageBox} from 'element-plus'
-import {emailDelete, emailRead} from "@/request/email.js";
+import {emailDelete, emailRead, emailTranslate} from "@/request/email.js";
 import {Icon} from "@iconify/vue";
 import {useEmailStore} from "@/store/email.js";
 import {useAccountStore} from "@/store/account.js";
@@ -113,6 +124,47 @@ let senderResizeObserver = null
 
 const showPreview = ref(false)
 const srcList = reactive([])
+
+const translateLangs = [
+  {value: 'zh', label: '简体中文'},
+  {value: 'en', label: 'English'},
+  {value: 'ja', label: '日本語'},
+  {value: 'ko', label: '한국어'},
+  {value: 'fr', label: 'Français'},
+  {value: 'de', label: 'Deutsch'},
+  {value: 'es', label: 'Español'},
+  {value: 'pt', label: 'Português'},
+  {value: 'it', label: 'Italiano'},
+  {value: 'ru', label: 'Русский'},
+  {value: 'ar', label: 'العربية'},
+  {value: 'th', label: 'ไทย'},
+  {value: 'vi', label: 'Tiếng Việt'},
+  {value: 'id', label: 'Bahasa Indonesia'},
+  {value: 'hi', label: 'हिन्दी'},
+]
+const targetLang = ref('zh')
+const translating = ref(false)
+const translated = ref(null)
+const showTranslated = ref(false)
+
+watch(() => email.value?.emailId, () => {
+  translated.value = null
+  showTranslated.value = false
+})
+
+async function handleTranslate() {
+  if (!email.value?.emailId || translating.value) return
+  translating.value = true
+  try {
+    translated.value = await emailTranslate(email.value.emailId, targetLang.value)
+    showTranslated.value = true
+  } catch (e) {
+    console.error(e)
+    ElMessage({message: t('translateFailed'), type: 'error', plain: true})
+  } finally {
+    translating.value = false
+  }
+}
 
 
 const email = computed(() => emailStore.contentData.email || {
@@ -553,6 +605,21 @@ const handleDelete = () => {
   white-space: pre-wrap;
   word-break: break-word;
   margin: 0;
+}
+
+.translate-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+  .translate-select {
+    width: 140px;
+  }
+}
+
+.translated-subject {
+  font-weight: bold;
+  margin-bottom: 10px;
 }
 
 .bottom-distance {

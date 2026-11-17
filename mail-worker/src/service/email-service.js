@@ -11,6 +11,7 @@ import emailUtils from '../utils/email-utils';
 import fileUtils from '../utils/file-utils';
 import { Resend } from 'resend';
 import attService from './att-service';
+import aiService from './ai-service';
 import { parseHTML } from 'linkedom';
 import userService from './user-service';
 import roleService from './role-service';
@@ -1499,6 +1500,20 @@ const emailService = {
 	async read(c, params, userId) {
 		const { emailIds } = params;
 		await orm(c).update(email).set({ unread: emailConst.unread.READ }).where(and(eq(email.userId, userId), inArray(email.emailId, emailIds)));
+	},
+
+	async translate(c, params, userId) {
+		const { emailId, targetLang } = params;
+		const lang = String(targetLang || 'zh').slice(0, 8);
+		const row = await orm(c).select({ subject: email.subject, text: email.text, content: email.content }).from(email)
+			.where(and(eq(email.userId, userId), eq(email.emailId, Number(emailId)))).get();
+		if (!row) {
+			throw new BizError(t('emailNotExist'));
+		}
+		const bodyText = (row.text && row.text.trim()) ? row.text : emailUtils.htmlToText(row.content || '');
+		const subjectRes = await aiService.translateText(c, row.subject || '', lang);
+		const bodyRes = await aiService.translateText(c, bodyText.slice(0, 20000), lang);
+		return { subject: subjectRes.text, text: bodyRes.text, sourceLang: bodyRes.sourceLang };
 	}
 };
 

@@ -1,5 +1,10 @@
 const zh = {
     inbox: '收件箱',
+    translate: '翻译',
+    showOriginal: '显示原文',
+    showTranslation: '显示译文',
+    translating: '翻译中…',
+    translateFailed: '翻译失败，请重试',
     compose: '撰写邮件',
     drafts: '草稿箱',
     sent: '已发送',
